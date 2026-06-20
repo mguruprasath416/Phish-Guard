@@ -10,14 +10,36 @@ const app = express();
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// Build allowed origins: strip trailing slashes, support comma-separated list
+const rawOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  ...(process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(o => o.trim().replace(/\/$/, ''))   // trim & remove trailing slash
+    .filter(Boolean)
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow server-to-server (no origin) and listed origins
+    if (!origin || rawOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Allow any *.vercel.app preview URL for the same project
+    if (/^https:\/\/phish-guard.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: Origin ${origin} not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle OPTIONS preflight for all routes
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
