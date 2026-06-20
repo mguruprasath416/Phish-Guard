@@ -9,6 +9,7 @@
 !/frontend/
 !/backend/
 !/.gitignore
+!/render.yaml
 
 # ============================================================
 # ENVIRONMENT / SECRETS (global, applies inside any folder)
@@ -22,6 +23,9 @@
 
 # Allow .env.example template files (no real secrets, safe to commit)
 !**/.env.example
+
+# Allow .env.production for Render deployment (contains only public non-secret values)
+!frontend/.env.production
 
 # ============================================================
 # MARKDOWN DOCS (ignore all .md files everywhere)

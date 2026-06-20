@@ -1,0 +1,82 @@
+services:
+  # ─── Python AI Unified Service ─────────────────────────────────────────────
+  - type: web
+    name: phishguard-ai
+    runtime: python
+    rootDir: backend/ai
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn unified_service:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: VIRUSTOTAL_API_KEY
+        sync: false
+      - key: GOOGLE_SAFE_BROWSING_API_KEY
+        sync: false
+      - key: ABUSEIPDB_API_KEY
+        sync: false
+
+  # ─── Node.js Express Backend ────────────────────────────────────────────────
+  - type: web
+    name: phishguard-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: EMAIL_SERVICE_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_SERVICE_PORT
+        value: "587"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: FRONTEND_URL
+        value: https://phishguard-frontend.onrender.com
+      - key: EMAIL_SERVICE_URL
+        value: https://phishguard-ai.onrender.com
+      - key: URL_SERVICE_URL
+        value: https://phishguard-ai.onrender.com
+      - key: THREAT_INTEL_URL
+        value: https://phishguard-ai.onrender.com
+      - key: LLM_SERVICE_URL
+        value: https://phishguard-ai.onrender.com
+      - key: RISK_ENGINE_URL
+        value: https://phishguard-ai.onrender.com
+      - key: VIRUSTOTAL_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+  # ─── React Frontend (Static Site) ──────────────────────────────────────────
+  - type: web
+    name: phishguard-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    plan: free
+    envVars:
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        value: 761021852818-jj3fo3tnsshoml73mt8032t04nnpl7a7.apps.googleusercontent.com
+      - key: REACT_APP_API_URL
+        value: https://phishguard-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
