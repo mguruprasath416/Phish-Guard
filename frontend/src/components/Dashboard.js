@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 import {
     Container,
     Paper,
@@ -36,7 +38,7 @@ const Dashboard = () => {
 
     const fetchSimulations = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/simulations', {
+            const response = await axios.get(`${API_BASE}/api/simulations`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSimulations(response.data);
@@ -52,7 +54,7 @@ const Dashboard = () => {
 
         try {
             const response = await axios.post(
-                'http://localhost:5000/api/analyze',
+                `${API_BASE}/api/analyze`,
                 { sender: email, subject, body },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -69,7 +71,7 @@ const Dashboard = () => {
     const handleCreateSimulation = async () => {
         try {
             await axios.post(
-                'http://localhost:5000/api/simulations',
+                `${API_BASE}/api/simulations`,
                 {
                     sender: email,
                     subject,
