@@ -11,35 +11,59 @@ const app = express();
 // ─── Middleware ────────────────────────────────────────────────────────────────
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-// Build allowed origins: strip trailing slashes, support comma-separated list
-const rawOrigins = [
+// Hardcoded allowed origins (always works regardless of env vars)
+const HARDCODED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:3001',
-  ...(process.env.FRONTEND_URL || '')
-    .split(',')
-    .map(o => o.trim().replace(/\/$/, ''))   // trim & remove trailing slash
-    .filter(Boolean)
+  'https://phish-guard-three-iota.vercel.app',  // ← production Vercel URL
 ];
 
+// Also read from env (strip trailing slashes, support comma-separated)
+const ENV_ORIGINS = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(o => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const ALLOWED_ORIGINS = [...new Set([...HARDCODED_ORIGINS, ...ENV_ORIGINS])];
+
+// ── Layer 1: Manually inject CORS headers FIRST (catches all edge cases) ──────
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const isAllowed =
+    !origin ||
+    ALLOWED_ORIGINS.includes(origin) ||
+    /^https:\/\/phish-guard.*\.vercel\.app$/.test(origin);
+
+  if (isAllowed && origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Vary', 'Origin');
+  }
+
+  // Immediately respond to OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  next();
+});
+
+// ── Layer 2: cors() package as a second layer ─────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server (no origin) and listed origins
-    if (!origin || rawOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    // Allow any *.vercel.app preview URL for the same project
-    if (/^https:\/\/phish-guard.*\.vercel\.app$/.test(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS: Origin ${origin} not allowed`));
+    const allowed =
+      !origin ||
+      ALLOWED_ORIGINS.includes(origin) ||
+      /^https:\/\/phish-guard.*\.vercel\.app$/.test(origin);
+    // callback(null, false) instead of callback(new Error) — always sends headers
+    callback(null, allowed);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
-// Handle OPTIONS preflight for all routes
-app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
