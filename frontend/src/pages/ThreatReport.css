@@ -1,0 +1,300 @@
+.threat-report-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.report-header {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.report-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #1f2937;
+}
+
+.back-button {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.threat-badge {
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.report-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.report-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.report-section.centered {
+  text-align: center;
+}
+
+.report-section h2 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  color: #1f2937;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 12px;
+}
+
+.report-section p {
+  margin: 0;
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.analysis-text {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  color: #374151;
+}
+
+.attack-vector {
+  text-align: center;
+  padding: 16px;
+  background: #fef2f2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+.vector-type {
+  font-size: 24px;
+  font-weight: bold;
+  color: #dc2626;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ioc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ioc-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  align-items: center;
+}
+
+.ioc-type {
+  font-weight: 600;
+  color: #374151;
+  min-width: 120px;
+}
+
+.ioc-description {
+  flex: 1;
+  color: #6b7280;
+}
+
+.ioc-severity {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ioc-severity.critical {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.ioc-severity.high {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.ioc-severity.medium {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.ioc-severity.low {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.mitigation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mitigation-item {
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.mitigation-item.critical {
+  background: #fef2f2;
+  border-left-color: #dc2626;
+}
+
+.mitigation-item.high {
+  background: #fef3c7;
+  border-left-color: #d97706;
+}
+
+.mitigation-item.medium {
+  background: #f3f4f6;
+  border-left-color: #6b7280;
+}
+
+.mitigation-item.low {
+  background: #f0fdf4;
+  border-left-color: #16a34a;
+}
+
+.step-priority {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.step-action {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.step-description {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.technical-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-group h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.detail-group ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #6b7280;
+}
+
+.detail-group li {
+  margin-bottom: 4px;
+  font-family: monospace;
+}
+
+.user-feedback {
+  padding: 16px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.feedback-rating {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.feedback-rating strong {
+  color: #16a34a;
+}
+
+.feedback-comments {
+  margin-bottom: 8px;
+}
+
+.feedback-comments p {
+  margin: 4px 0 0 0;
+  color: #374151;
+}
+
+.feedback-date {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.confidence-display {
+  margin-top: 16px;
+  font-size: 18px;
+  color: #374151;
+}
+
+.confidence-display strong {
+  color: #16a34a;
+}
+
+.loading,
+.error {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error h2 {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.error button {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.error button:hover {
+  background: #5568d3;
+}

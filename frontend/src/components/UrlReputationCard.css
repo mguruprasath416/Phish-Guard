@@ -1,0 +1,97 @@
+.url-reputation-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.card-header {
+  margin-bottom: 16px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.reputation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reputation-item {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.item-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.item-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.value-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.value-status {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ssl-status {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ssl-status.valid {
+  color: #16a34a;
+}
+
+.ssl-status.invalid {
+  color: #dc2626;
+}
+
+.dns-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dns-record {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.dns-label {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dns-value {
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.no-data {
+  text-align: center;
+  color: #6b7280;
+  padding: 20px;
+}
