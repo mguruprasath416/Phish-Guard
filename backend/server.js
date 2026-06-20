@@ -2,352 +2,253 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const bcrypt = require('bcryptjs');
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Middleware
+// ─── Middleware ────────────────────────────────────────────────────────────────
+
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// ─── Database Connection ───────────────────────────────────────────────────────
 
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err.message);
+    process.exit(1);
+  });
 
-mongoose 
-.connect(process.env.MONGODB_URI)
-.then(() => console.log('Connected to MongoDB'))
-.catch((err)=>console.log(err))
-// User Schema
-const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    role: {
-        type: String,
-        enum: ['user', 'admin'],
-        default: 'user'
-    },
-    isLoggedIn: {
-        type: Boolean,
-        default: false
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// Email Schema
-const emailSchema = new mongoose.Schema({
-    sender: {
-        type: String,
-        required: true
-    },
-    subject: {
-        type: String,
-        required: true
-    },
-    body: {
-        type: String,
-        required: true
-    },
-    isPhishing: {
-        type: Boolean,
-        required: true
-    },
-    indicators: [{
-        type: String
-    }],
-    createdBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+const authRoutes = require('./routes/authRoutes');
+const scanRoutes = require('./routes/scanRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
-const User = mongoose.model('User', userSchema);
-const Email = mongoose.model('Email', emailSchema);
+app.use('/api/auth', authRoutes);
+app.use('/api/scan', scanRoutes);
+app.use('/api/reports', reportRoutes);
 
-// Routes
-
-// Register endpoint
-app.post('/api/register', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: 'User already exists' });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new user
-        const user = new User({
-            email,
-            password: hashedPassword,
-            isLoggedIn: false
-        });
-
-        await user.save();
-        res.status(201).json({ success: true, message: 'Registration successful' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error registering user' });
-    }
-});
-
-// Login endpoint
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ success: false, error: 'Email and password are required' });
-        }
-
-        // Find user
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(401).json({ success: false, error: 'Invalid credentials' });
-        }
-
-        // Check password
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-            return res.status(401).json({ success: false, error: 'Invalid credentials' });
-        }
-
-        // Update login status
-        user.isLoggedIn = true;
-        await user.save();
-
-        res.json({
-            success: true,
-            user: {
-                email: user.email,
-                id: user._id,
-                role: user.role
-            }
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ success: false, error: 'An error occurred while logging in' });
-    }
-});
-
-// Logout endpoint
-app.post('/api/logout', async (req, res) => {
-    try {
-        const { email } = req.body;
-        const user = await User.findOne({ email });
-        
-        if (user) {
-            user.isLoggedIn = false;
-            await user.save();
-        }
-
-        res.json({ success: true, message: 'Logged out successfully' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error logging out' });
-        res.status(500).json({ error: 'Server error' });
-    }
-});
+// Email analysis routes (existing functionality)
+const Email = require('./models/Email');
+const User = require('./models/User');
+const { protect } = require('./middleware/authMiddleware');
 
 // Create Phishing Simulation
-app.post('/api/simulations', async (req, res) => {
-    try {
-        const { sender, subject, body, email } = req.body;
+app.post('/api/simulations', protect, async (req, res) => {
+  try {
+    const { sender, subject, body } = req.body;
 
-        if (!sender || !subject || !body || !email) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields'
-            });
-        }
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                error: 'User not found'
-            });
-        }
-
-        // Analyze the email
-        const indicators = analyzePhishingIndicators(subject, body);
-        const isPhishing = indicators.length > 0;
-
-        const simulation = new Email({
-            sender,
-            subject,
-            body,
-            isPhishing,
-            indicators,
-            createdBy: user._id
-        });
-
-        await simulation.save();
-
-        res.status(201).json({
-            success: true,
-            result: {
-                isPhishing,
-                indicators,
-                simulation: {
-                    id: simulation._id,
-                    sender,
-                    subject,
-                    createdAt: simulation.createdAt
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Simulation error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error analyzing email'
-        });
+    if (!sender || !subject || !body) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
+
+    const { isPhishing, indicators } = analyzePhishingIndicators(sender, subject, body);
+
+    const simulation = new Email({
+      sender, subject, body, isPhishing, indicators, createdBy: req.user._id
+    });
+
+    await simulation.save();
+
+    res.status(201).json({
+      success: true,
+      result: {
+        isPhishing,
+        indicators,
+        simulation: { id: simulation._id, sender, subject, createdAt: simulation.createdAt }
+      }
+    });
+  } catch (error) {
+    console.error('Simulation error:', error);
+    res.status(500).json({ success: false, error: 'Error analyzing email' });
+  }
 });
 
 // Get All Simulations
-app.get('/api/simulations', async (req, res) => {
-    try {
-        const { email } = req.query;
-        
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const simulations = await Email.find({ createdBy: user._id })
-            .sort({ createdAt: -1 });
-        res.json(simulations);
-    } catch (error) {
-        res.status(500).json({ error: 'Error fetching simulations' });
-    }
+app.get('/api/simulations', protect, async (req, res) => {
+  try {
+    const simulations = await Email.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+    res.json(simulations);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching simulations' });
+  }
 });
 
-// Analyze Email
+// Analyze Email (no auth required)
 app.post('/api/analyze', async (req, res) => {
-    try {
-        const { sender, subject, body } = req.body;
-        const indicators = analyzePhishingIndicators(subject, body);
-        const isPhishing = indicators.length > 0;
+  try {
+    const { sender, subject, body } = req.body;
+    const { isPhishing, indicators } = analyzePhishingIndicators(sender, subject, body);
 
-        res.json({
-            isPhishing,
-            indicators,
-            analysis: {
-                sender: analyzeSender(sender),
-                subject: analyzeSubject(subject),
-                body: analyzeBody(body)
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
-    }
+    res.json({
+      isPhishing,
+      indicators,
+      analysis: {
+        sender: analyzeSender(sender),
+        subject: analyzeSubject(subject),
+        body: analyzeBody(body)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-// Helper Functions
-function analyzePhishingIndicators(subject, body) {
-    const indicators = [];
-    const phishingKeywords = [
-        'urgent', 'verify', 'account', 'suspended', 'login',
-        'confirm', 'bank', 'security', 'update', 'password'
-    ];
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
-    // Check subject
-    const subjectLower = subject.toLowerCase();
-    if (phishingKeywords.some(keyword => subjectLower.includes(keyword))) {
-        indicators.push('Suspicious subject keywords');
+// ─── Helper Functions ──────────────────────────────────────────────────────────
+
+function analyzePhishingIndicators(sender, subject, body) {
+  const emailLower = (sender || '').toLowerCase();
+  const subjectLower = (subject || '').toLowerCase();
+  const bodyLower = (body || '').toLowerCase();
+  
+  let safetyScore = 100;
+  const threatFlags = [];
+  
+  // 1. Domain Spoofing Detection
+  const brands = [
+    { name: 'PayPal', domain: 'paypal.com' },
+    { name: 'Netflix', domain: 'netflix.com' },
+    { name: 'Google', domain: 'google.com' },
+    { name: 'Amazon', domain: 'amazon.com' },
+    { name: 'Apple', domain: 'apple.com' },
+    { name: 'Microsoft', domain: 'microsoft.com' },
+    { name: 'Facebook', domain: 'facebook.com' },
+    { name: 'Instagram', domain: 'instagram.com' },
+    { name: 'Steam', domain: 'steampowered.com' },
+    { name: 'Chase Bank', domain: 'chase.com' },
+    { name: 'Bank of America', domain: 'bankofamerica.com' }
+  ];
+  
+  let brandSpoofed = null;
+  const senderDomain = emailLower.includes('@') ? emailLower.split('@')[1] : '';
+  
+  for (const brand of brands) {
+    const mentionsBrand = 
+      emailLower.includes(brand.name.toLowerCase()) || 
+      subjectLower.includes(brand.name.toLowerCase()) || 
+      bodyLower.includes(brand.name.toLowerCase());
+      
+    if (mentionsBrand && senderDomain && !senderDomain.includes(brand.domain)) {
+      brandSpoofed = brand;
+      break;
     }
-
-    // Check urgency in subject
-    if (subjectLower.includes('urgent') || subjectLower.includes('immediate')) {
-        indicators.push('Urgency in subject');
+  }
+  
+  if (brandSpoofed) {
+    safetyScore -= 35;
+    threatFlags.push(`Brand Spoofing: Claims association with ${brandSpoofed.name} but originates from domain "${senderDomain}" instead of "${brandSpoofed.domain}".`);
+  }
+  
+  // 2. Urgency & Social Engineering check
+  const urgencyWords = ['urgent', 'immediate', 'action required', 'suspended', 'verify now', 'security alert', 'unauthorized access', 'pay now', 'account restricted'];
+  const foundUrgency = urgencyWords.filter(w => subjectLower.includes(w) || bodyLower.includes(w));
+  if (foundUrgency.length > 0) {
+    safetyScore -= Math.min(foundUrgency.length * 8, 25);
+    threatFlags.push(`Urgency Triggers: Detects high-pressure phrasing (${foundUrgency.join(', ')}).`);
+  }
+  
+  // 3. Sensitive Information Harvesting Check
+  const sensitiveWords = ['password', 'ssn', 'social security', 'credit card', 'cvv', 'pin number', 'verify your card', 'identity confirm'];
+  const foundSensitive = sensitiveWords.filter(w => bodyLower.includes(w));
+  if (foundSensitive.length > 0) {
+    safetyScore -= 25;
+    threatFlags.push(`Credential Harvesting: Requests sensitive credentials or identification (${foundSensitive.join(', ')}).`);
+  }
+  
+  // 4. Link extraction and safety check
+  const urls = bodyLower.match(/(https?:\/\/[^\s"']+)/g) || [];
+  const linkAnalyses = urls.map(url => {
+    let linkScore = 100;
+    const linkFlags = [];
+    
+    if (!url.startsWith('https://')) {
+      linkScore -= 30;
     }
-
-    // Check body
-    const bodyLower = body.toLowerCase();
-    if (phishingKeywords.some(keyword => bodyLower.includes(keyword))) {
-        indicators.push('Suspicious body keywords');
+    
+    const hasIP = /\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url);
+    if (hasIP) {
+      linkScore -= 45;
     }
-
-    // Check for URLs
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const urls = body.match(urlRegex) || [];
-    if (urls.length > 0) {
-        indicators.push('Contains URLs');
+    
+    const suspKeywords = ['login', 'verify', 'update', 'secure', 'account', 'signin', 'free'];
+    const matchedKeywords = suspKeywords.filter(k => url.toLowerCase().includes(k));
+    if (matchedKeywords.length > 0) {
+      linkScore -= 20;
     }
-
-    // Check for personal information requests
-    if (bodyLower.includes('ssn') || bodyLower.includes('credit card') || 
-        bodyLower.includes('password')) {
-        indicators.push('Requests personal information');
+    
+    const shorteners = ['bit.ly', 'tinyurl.com', 't.co', 'rebrand.ly'];
+    if (shorteners.some(s => url.toLowerCase().includes(s))) {
+      linkScore -= 25;
     }
-
-    return indicators;
+    
+    return {
+      score: Math.max(linkScore, 0),
+    };
+  });
+  
+  const badLinksCount = linkAnalyses.filter(l => l.score < 60).length;
+  if (badLinksCount > 0) {
+    safetyScore -= 20;
+    threatFlags.push(`Malicious Links: Contains ${badLinksCount} suspicious or unencrypted URLs.`);
+  }
+  
+  const finalScore = Math.max(safetyScore, 0);
+  const isPhishing = finalScore < 75;
+  
+  return {
+    isPhishing,
+    indicators: threatFlags,
+    score: finalScore
+  };
 }
 
 function analyzeSender(sender) {
-    // Add sender analysis logic
-    return {
-        suspicious: false,
-        reason: 'Sender analysis not implemented'
-    };
+  return { suspicious: false, reason: 'Sender analysis not implemented' };
 }
 
 function analyzeSubject(subject) {
-    const subjectLower = subject.toLowerCase();
-    const urgencyWords = ['urgent', 'immediate', 'action required', 'important'];
-    const hasUrgency = urgencyWords.some(word => subjectLower.includes(word));
-
-    return {
-        suspicious: hasUrgency,
-        reason: hasUrgency ? 'Contains urgency indicators' : 'No urgency detected'
-    };
+  const subjectLower = subject.toLowerCase();
+  const urgencyWords = ['urgent', 'immediate', 'action required', 'important'];
+  const hasUrgency = urgencyWords.some(w => subjectLower.includes(w));
+  return { suspicious: hasUrgency, reason: hasUrgency ? 'Contains urgency indicators' : 'No urgency detected' };
 }
 
 function analyzeBody(body) {
-    const bodyLower = body.toLowerCase();
-    const suspiciousPatterns = [
-        'verify your account',
-        'confirm your identity',
-        'update your information',
-        'click here',
-        'login to continue'
-    ];
-
-    const matches = suspiciousPatterns.filter(pattern => 
-        bodyLower.includes(pattern.toLowerCase())
-    );
-
-    return {
-        suspicious: matches.length > 0,
-        matches,
-        reason: matches.length > 0 ? 'Contains suspicious patterns' : 'No suspicious patterns detected'
-    };
+  const bodyLower = body.toLowerCase();
+  const suspiciousPatterns = [
+    'verify your account', 'confirm your identity', 'update your information',
+    'click here', 'login to continue'
+  ];
+  const matches = suspiciousPatterns.filter(p => bodyLower.includes(p));
+  return {
+    suspicious: matches.length > 0,
+    matches,
+    reason: matches.length > 0 ? 'Contains suspicious patterns' : 'No suspicious patterns detected'
+  };
 }
 
-// Start server
+// ─── Start Server ──────────────────────────────────────────────────────────────
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

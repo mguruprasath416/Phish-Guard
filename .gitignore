@@ -1,0 +1,91 @@
+# ============================================================
+# ROOT LEVEL: Ignore everything except frontend and backend
+# ============================================================
+
+# Ignore everything at root level
+/*
+
+# Whitelist ONLY the frontend and backend directories
+!/frontend/
+!/backend/
+!/.gitignore
+
+# ============================================================
+# ENVIRONMENT / SECRETS (global, applies inside any folder)
+# ============================================================
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.test
+*.env
+
+# Allow .env.example template files (no real secrets, safe to commit)
+!**/.env.example
+
+# ============================================================
+# MARKDOWN DOCS (ignore all .md files everywhere)
+# ============================================================
+**/*.md
+*.md
+
+# ============================================================
+# DEPENDENCY / BUILD DIRECTORIES
+# ============================================================
+
+# Node.js
+**/node_modules/
+
+# React build output
+**/build/
+**/dist/
+**/out/
+
+# Python cache and virtual environments
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/venv/
+**/env/
+**/.venv/
+**/.env_python/
+**/site-packages/
+
+# ============================================================
+# LOGS & TEMP FILES
+# ============================================================
+**/*.log
+**/*.log.*
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.DS_Store
+**/Thumbs.db
+
+# ============================================================
+# EDITOR & OS FILES
+# ============================================================
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+
+# ============================================================
+# DOCKER & INFRA (not needed in repo upload)
+# ============================================================
+docker-compose.yml
+docker-compose.*.yml
+**/Dockerfile.local
+
+# ============================================================
+# MISC FILES AT ROOT (datasets, docs, infrastructure)
+# ============================================================
+/datasets/
+/docs/
+/infrastructure/
+/BACKEND_ARCHITECTURE.md
+/EMAIL_VERIFICATION_GUIDE.md
+/PROJECT_REPORT.md
+/README.md
+/docker-compose.yml
