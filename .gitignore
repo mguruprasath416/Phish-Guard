@@ -10,6 +10,7 @@
 !/backend/
 !/.gitignore
 !/render.yaml
+!/README.md
 
 # ============================================================
 # ENVIRONMENT / SECRETS (global, applies inside any folder)
@@ -32,6 +33,8 @@
 # ============================================================
 **/*.md
 *.md
+!README.md
+!/**/README.md
 
 # ============================================================
 # DEPENDENCY / BUILD DIRECTORIES
@@ -91,5 +94,4 @@ docker-compose.*.yml
 /BACKEND_ARCHITECTURE.md
 /EMAIL_VERIFICATION_GUIDE.md
 /PROJECT_REPORT.md
-/README.md
 /docker-compose.yml

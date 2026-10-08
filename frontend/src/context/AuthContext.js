@@ -3,6 +3,7 @@ import axios from 'axios';
 
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 axios.defaults.withCredentials = true;
+axios.defaults.timeout = 25000; // 25s timeout so requests don't hang indefinitely
 
 // Add request interceptor to attach JWT token to all API calls
 axios.interceptors.request.use(
@@ -173,7 +174,16 @@ export const AuthProvider = ({ children }) => {
             throw new Error(response.data.error || 'Google Login failed');
         } catch (err) {
             const errData = err.response?.data;
-            const msg = errData?.error || err.message;
+            let msg = errData?.error;
+            if (!msg) {
+                if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+                    msg = 'The backend server took too long to respond. Render may be waking up from sleep (can take ~50s). Please wait a moment and try again.';
+                } else if (err.message?.includes('Network Error')) {
+                    msg = 'Unable to reach backend server. Please verify the backend service is running on Render.';
+                } else {
+                    msg = err.message || 'Google Login failed';
+                }
+            }
             setError(msg);
             return { success: false, error: msg };
         } finally {
