@@ -66,7 +66,7 @@ frontend/src/
 
 ### Local Registration
 1. User fills in Name, Email, Password → `POST /api/auth/register`
-2. Backend sends verification email via Brevo/Resend API (HTTPS port 443)
+2. Backend sends verification email via Nodemailer (SMTP)
 3. User clicks verification link → `GET /api/auth/verify-email/:token`
 4. User logs in → `POST /api/auth/login`
 5. JWT stored in `localStorage`, injected into all requests via Axios interceptor

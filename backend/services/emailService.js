@@ -69,67 +69,16 @@ const sendVerificationEmail = async (toEmail, name, token) => {
       </div>
     `;
 
-  if (process.env.BREVO_API_KEY) {
-    console.log('Using Brevo API to send email...');
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'no-reply@phishguard.com';
-    const senderName = 'PhishGuard Security';
-    
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: { name: senderName, email: senderEmail },
-        to: [{ email: toEmail, name: name }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Brevo API failed: ${response.status} - ${errorText}`);
-    }
-    console.log('Email sent successfully via Brevo API');
-  } else if (process.env.RESEND_API_KEY) {
-    console.log('Using Resend API to send email...');
-    // Free Resend account defaults to onboarding@resend.dev if custom domain is not verified
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-    
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: `PhishGuard Security <${fromEmail}>`,
-        to: toEmail,
-        subject: subject,
-        html: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Resend API failed: ${response.status} - ${errorText}`);
-    }
-    console.log('Email sent successfully via Resend API');
-  } else {
-    console.log('Using Nodemailer (SMTP) to send email...');
-    const transporter = createTransporter();
-    const mailOptions = {
-      from: `"PhishGuard Security" <${process.env.EMAIL_USER}>`,
-      to: toEmail,
-      subject: subject,
-      html: htmlContent
-    };
-    await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully via Nodemailer');
-  }
+  console.log('Sending verification email via Nodemailer...');
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: `"PhishGuard Security" <${process.env.EMAIL_USER || 'no-reply@phishguard.com'}>`,
+    to: toEmail,
+    subject: subject,
+    html: htmlContent
+  };
+  await transporter.sendMail(mailOptions);
+  console.log('Email sent successfully via Nodemailer');
 };
 
 /**
